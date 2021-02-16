@@ -555,6 +555,36 @@ func TestEncodeDecodeMetadata(t *testing.T) {
 	assert.Equal(t, []byte("foo"), dec.Metadata()["test"])
 }
 
+func TestEncodeDecode_WriteObj(t *testing.T) {
+	buf := &bytes.Buffer{}
+	enc, _ := ocf.NewEncoder(`"long"`, buf)
+
+	err := enc.WriteObj([]byte{0x2})
+	assert.NoError(t, err)
+
+	err = enc.Close()
+	assert.NoError(t, err)
+
+	dec, err := ocf.NewDecoder(buf)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	var count int
+	for dec.HasNext() {
+		count++
+		var got int64
+		err = dec.Decode(&got)
+
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), got)
+	}
+
+	assert.NoError(t, dec.Error())
+	assert.Equal(t, 1, count)
+}
+
 type errorWriter struct{}
 
 func (*errorWriter) Write(p []byte) (n int, err error) {

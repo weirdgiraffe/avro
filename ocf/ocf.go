@@ -250,12 +250,25 @@ func (e *Encoder) Encode(v interface{}) error {
 	}
 
 	e.count++
+	return e.checkBlock()
+}
+
+// WriteObj writes an avro encoded object to the OCF file.
+//
+// The object is not checked against the OCF schema.
+func (e *Encoder) WriteObj(obj []byte) error {
+	e.buf.Write(obj)
+
+	e.count++
+	return e.checkBlock()
+}
+
+func (e *Encoder) checkBlock() error {
 	if e.count >= e.blockLength {
 		if err := e.writerBlock(); err != nil {
 			return err
 		}
 	}
-
 	return e.writer.Error
 }
 
