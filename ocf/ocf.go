@@ -265,7 +265,7 @@ func (e *Encoder) WriteObj(obj []byte) error {
 
 func (e *Encoder) checkBlock() error {
 	if e.count >= e.blockLength {
-		if err := e.writerBlock(); err != nil {
+		if err := e.writeBlock(); err != nil {
 			return err
 		}
 	}
@@ -278,7 +278,7 @@ func (e *Encoder) Flush() error {
 		return nil
 	}
 
-	if err := e.writerBlock(); err != nil {
+	if err := e.writeBlock(); err != nil {
 		return err
 	}
 
@@ -290,7 +290,7 @@ func (e *Encoder) Close() error {
 	return e.Flush()
 }
 
-func (e *Encoder) writerBlock() error {
+func (e *Encoder) writeBlock() error {
 	e.writer.WriteLong(int64(e.count))
 
 	b := e.codec.Encode(e.buf.Bytes())
