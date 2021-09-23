@@ -127,6 +127,9 @@ type Schema interface {
 	// Type returns the type of the schema.
 	Type() Type
 
+	// Copy makes a shallow copy of the schema.
+	Copy() Schema
+
 	// String returns the canonical form of the schema.
 	String() string
 
@@ -381,6 +384,14 @@ func (s *PrimitiveSchema) Type() Type {
 	return s.typ
 }
 
+// Copy makes a shallow copy of the schema.
+func (s *PrimitiveSchema) Copy() Schema {
+	return &PrimitiveSchema{
+		typ:     s.typ,
+		logical: s.logical,
+	}
+}
+
 // Logical returns the logical schema or nil.
 func (s *PrimitiveSchema) Logical() LogicalSchema {
 	return s.logical
@@ -457,6 +468,22 @@ func NewErrorRecordSchema(name, namespace string, fields []*Field, opts ...Schem
 // Type returns the type of the schema.
 func (s *RecordSchema) Type() Type {
 	return Record
+}
+
+// Copy makes a shallow copy of the schema.
+func (s *RecordSchema) Copy() Schema {
+	fields := make([]*Field, 0, len(s.fields))
+	for _, f := range s.fields {
+		fields = append(fields, f.Copy())
+	}
+
+	return &RecordSchema{
+		name:       s.name,
+		properties: s.properties,
+		isError:    s.isError,
+		fields:     fields,
+		doc:        s.doc,
+	}
 }
 
 // IsError determines is this is an error record.
@@ -604,6 +631,13 @@ func (f *Field) Type() Schema {
 	return f.typ
 }
 
+// Copy makes a shallow copy of the field.
+func (f *Field) Copy() *Field {
+	var n Field
+	n = *f
+	return &n
+}
+
 // Doc returns the field doc.
 func (f *Field) Doc() string {
 	return f.doc
@@ -723,6 +757,20 @@ func (s *EnumSchema) Type() Type {
 	return Enum
 }
 
+// Copy makes a shallow copy of the schema.
+func (s *EnumSchema) Copy() Schema {
+	sym := make([]string, len(s.symbols))
+	copy(sym, s.symbols)
+
+	return &EnumSchema{
+		name:       s.name,
+		properties: s.properties,
+		symbols:    sym,
+		def:        s.def,
+		doc:        s.doc,
+	}
+}
+
 // Doc returns the schema doc.
 func (s *EnumSchema) Doc() string {
 	return s.doc
@@ -807,6 +855,14 @@ func (s *ArraySchema) Type() Type {
 	return Array
 }
 
+// Copy makes a shallow copy of the schema.
+func (s *ArraySchema) Copy() Schema {
+	return &ArraySchema{
+		properties: s.properties,
+		items:      s.items,
+	}
+}
+
 // Items returns the items schema of an array.
 func (s *ArraySchema) Items() Schema {
 	return s.items
@@ -863,6 +919,14 @@ func NewMapSchema(values Schema, opts ...SchemaOption) *MapSchema {
 // Type returns the type of the schema.
 func (s *MapSchema) Type() Type {
 	return Map
+}
+
+// Copy makes a shallow copy of the schema.
+func (s *MapSchema) Copy() Schema {
+	return &MapSchema{
+		properties: s.properties,
+		values:     s.values,
+	}
 }
 
 // Values returns the values schema of a map.
@@ -928,6 +992,16 @@ func NewUnionSchema(types []Schema) (*UnionSchema, error) {
 // Type returns the type of the schema.
 func (s *UnionSchema) Type() Type {
 	return Union
+}
+
+// Copy makes a shallow copy of the schema.
+func (s *UnionSchema) Copy() Schema {
+	t := make([]Schema, len(s.types))
+	copy(t, s.types)
+
+	return &UnionSchema{
+		types: t,
+	}
 }
 
 // Types returns the types of a union.
@@ -1025,6 +1099,16 @@ func (s *FixedSchema) Type() Type {
 	return Fixed
 }
 
+// Copy makes a shallow copy of the schema.
+func (s *FixedSchema) Copy() Schema {
+	return &FixedSchema{
+		name:       s.name,
+		properties: s.properties,
+		size:       s.size,
+		logical:    s.logical,
+	}
+}
+
 // Size returns the number of bytes of the fixed schema.
 func (s *FixedSchema) Size() int {
 	return s.size
@@ -1093,6 +1177,11 @@ func (s *NullSchema) Type() Type {
 	return Null
 }
 
+// Copy makes a shallow copy of the schema.
+func (s *NullSchema) Copy() Schema {
+	return s
+}
+
 // String returns the canonical form of the schema.
 func (s *NullSchema) String() string {
 	return `"null"`
@@ -1128,6 +1217,11 @@ func NewRefSchema(schema NamedSchema) *RefSchema {
 // Type returns the type of the schema.
 func (s *RefSchema) Type() Type {
 	return Ref
+}
+
+// Copy makes a shallow copy of the schema.
+func (s *RefSchema) Copy() Schema {
+	return s
 }
 
 // Schema returns the schema being referenced.
